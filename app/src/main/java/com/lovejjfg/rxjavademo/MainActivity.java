@@ -1,31 +1,28 @@
 package com.lovejjfg.rxjavademo;
 
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.TextureView;
+import android.view.DragEvent;
 
 import com.f2prateek.rx.preferences.RxSharedPreferences;
+import com.jakewharton.rxbinding.view.RxView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
-import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
-import rx.functions.Func0;
 import rx.functions.Func1;
-import rx.internal.operators.OperatorToMultimap;
-import rx.observables.GroupedObservable;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,6 +37,15 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext());
         rxPreferences = RxSharedPreferences.create(preferences);
         initStudents();
+        //noinspection ConstantConditions
+        RxView.clicks(findViewById(R.id.bt))
+                .throttleFirst(1, TimeUnit.SECONDS)
+                .subscribe(new Action1<Void>() {
+                    @Override
+                    public void call(Void aVoid) {
+                        methd6();
+                    }
+                });
 //        method1();
 //        method2();
 //        method3();
@@ -50,21 +56,40 @@ public class MainActivity extends AppCompatActivity {
 
 //        method5();
 
-        Observable<String> just = Observable.just("S", "O", "S").subscribeOn(Schedulers.newThread());
 
-        Observable<String> just1 = Observable.just("S","T","R").subscribeOn(Schedulers.newThread());
+
+    }
+
+    /**
+     * merge 方法使用
+     */
+    private void methd6() {
+        Observable<String> just = Observable.just("S", "O", "S")
+                .subscribeOn(Schedulers.newThread())
+                .doOnNext(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        SystemClock.sleep(20);
+                    }
+                });
+
+        Observable<String> just1 = Observable.just("S", "T", "R").subscribeOn(Schedulers.newThread())
+                .doOnNext(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        SystemClock.sleep(20);
+                    }
+                });
 
         Observable.merge(just1, just)
                 .subscribeOn(Schedulers.newThread())
                 .distinct()
-//                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<String>() {
                     @Override
                     public void call(String s) {
                         Log.e(TAG, "call: " + s);
                     }
                 });
-
     }
 
     /**
