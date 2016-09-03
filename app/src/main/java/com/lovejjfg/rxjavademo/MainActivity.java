@@ -9,9 +9,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.DragEvent;
+import android.widget.CheckBox;
 
 import com.f2prateek.rx.preferences.RxSharedPreferences;
 import com.jakewharton.rxbinding.view.RxView;
+import com.jakewharton.rxbinding.widget.RxCompoundButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -29,23 +32,38 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private ArrayList<Student> students;
     private RxSharedPreferences rxPreferences;
+    private CheckBox checkBox;
+    ArrayList<Subscription> subscriptions = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        checkBox = (CheckBox) findViewById(R.id.cb);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext());
         rxPreferences = RxSharedPreferences.create(preferences);
         initStudents();
+
         //noinspection ConstantConditions
-        RxView.clicks(findViewById(R.id.bt))
+        Subscription clickSubscribe = RxView.clicks(findViewById(R.id.bt))
                 .throttleFirst(1, TimeUnit.SECONDS)
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.e(TAG, "clicks->doOnUnsubscribe");
+                    }
+                })
                 .subscribe(new Action1<Void>() {
                     @Override
                     public void call(Void aVoid) {
-                        methd6();
+                        methodCallBack();
                     }
                 });
+        subscriptions.add(clickSubscribe);
+
+
+        RxCompoundButton();
+
 //        method1();
 //        method2();
 //        method3();
@@ -55,9 +73,120 @@ public class MainActivity extends AppCompatActivity {
 //        method11();
 
 //        method5();
+//        methodCallBack();
 
 
+    }
 
+    private void methodCallBack() {
+        Observable<String> observable = Observable.just("L", "O", "V", "E");
+        observable
+                .doOnSubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.e(TAG, "call: doOnSubscribe");
+
+                    }
+                })
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.e(TAG, "call: doOnUnsubscribe");
+                    }
+                })
+                .doOnEach(new Subscriber<String>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG, "doOnEach: onCompleted");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG, "doOnEach: onError");
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+                        Log.e(TAG, "doOnEach: onNext:"+s);
+                    }
+                })
+                .doOnNext(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        Log.e(TAG, "call: doOnNext");
+                    }
+                })
+                .doOnRequest(new Action1<Long>() {
+                    @Override
+                    public void call(Long aLong) {
+                        Log.e(TAG, "call: doOnRequest");
+                    }
+                })
+                .doOnTerminate(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.e(TAG, "call: doOnTerminate");
+                    }
+                })
+                .doAfterTerminate(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.e(TAG, "call: doAfterTerminate");
+                    }
+                })
+                .subscribe(new Subscriber<String>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG, "subscribe->call: onCompleted");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG, "subscribe->call: onError");
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+                        Log.e(TAG, "subscribe->call: onNext:" + s);
+                    }
+                });
+    }
+
+    private void RxCompoundButton() {
+        RxCompoundButton.checked(checkBox).call(rxPreferences.getBoolean("checked").get());
+        //noinspection ConstantConditions
+        Subscription checkedSubscription1 = RxCompoundButton.checkedChanges(checkBox)
+                .subscribe(rxPreferences.getBoolean("checked").asAction());
+        subscriptions.add(checkedSubscription1);
+
+        Subscription checkedSubscription = rxPreferences.getBoolean("checked")
+                .asObservable()
+                .doOnUnsubscribe(new Action0() {
+                    @Override
+                    public void call() {
+                        Log.e(TAG, "rxPreferences->doOnUnsubscribe");
+
+                    }
+                })
+                .subscribe(new Subscriber<Boolean>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG, "rxPreferences->onNext: +onCompleted");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(Boolean aBoolean) {
+                        Log.e(TAG, "rxPreferences->onNext: " + aBoolean);
+//                RxCompoundButton.checked(checkBox)
+//                        .call(aBoolean);
+                    }
+                });
+        subscriptions.add(checkedSubscription);
     }
 
     /**
@@ -390,4 +519,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onDestroy() {
+        for (Subscription s : subscriptions) {
+            if (!s.isUnsubscribed()) {
+                s.unsubscribe();
+                Log.e(TAG, "onDestroy: 取消订阅！");
+            }
+        }
+        super.onDestroy();
+    }
 }
