@@ -30,7 +30,7 @@ import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private   ArrayList<Student>  students;
+    private ArrayList<Student> students;
     private RxSharedPreferences rxPreferences;
 
     @Override
@@ -48,17 +48,36 @@ public class MainActivity extends AppCompatActivity {
 
 //        method11();
 
-        method5();
+//        method5();
+
+        Observable<String> just = Observable.just("S", "O", "S").subscribeOn(Schedulers.newThread());
+
+        Observable<String> just1 = Observable.just("S","T","R").subscribeOn(Schedulers.newThread());
+
+        Observable.merge(just1, just)
+                .subscribeOn(Schedulers.newThread())
+                .distinct()
+//                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<String>() {
+                    @Override
+                    public void call(String s) {
+                        Log.e(TAG, "call: " + s);
+                    }
+                });
 
     }
 
+    /**
+     * {@link Observable#concat}的使用方式
+     */
     private void method5() {
         Observable<String> netObservable = Observable.create(new Observable.OnSubscribe<String>() {
             @Override
             public void call(Subscriber<? super String> subscriber) {
                 Log.e(TAG, "走网络了！！");
                 subscriber.onNext("这是缓存数据！！");
-                subscriber.onCompleted(); }
+                subscriber.onCompleted();
+            }
         }).doOnNext(new Action1<String>() {
             @Override
             public void call(String s) {
@@ -228,6 +247,9 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * 学生年龄相关的check
+     */
     private void method2() {
 
         Observable.just(students)//创建Observable
@@ -307,8 +329,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
+
     private void method11() {
-        Observable.just("A","A", "B", "C","C", "D", "E")
+        Observable.just("A", "A", "B", "C", "C", "D", "E")
 //                .map(new Func1<Student, Object>() {
 //                })
                 .distinct()
