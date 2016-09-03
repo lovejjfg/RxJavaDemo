@@ -8,7 +8,6 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.DragEvent;
 import android.widget.CheckBox;
 
 import com.f2prateek.rx.preferences.RxSharedPreferences;
@@ -57,30 +56,26 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void call(Void aVoid) {
                         methodCallBack();
+//                        method1();
+//                        method2();
+//                        method3();
+//
+//                        method4();
+//
+//                        method11();
+//
+//                        method5();
                     }
                 });
         subscriptions.add(clickSubscribe);
 
-
         RxCompoundButton();
-
-//        method1();
-//        method2();
-//        method3();
-
-//        method4();
-
-//        method11();
-
-//        method5();
-//        methodCallBack();
-
 
     }
 
     private void methodCallBack() {
-        Observable<String> observable = Observable.just("L", "O", "V", "E");
-        observable
+        Observable.just("L", "O", "V", "E")
+                .subscribeOn(Schedulers.io())
                 .doOnSubscribe(new Action0() {
                     @Override
                     public void call() {
@@ -107,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onNext(String s) {
-                        Log.e(TAG, "doOnEach: onNext:"+s);
+                        Log.e(TAG, "doOnEach: onNext:" + s);
                     }
                 })
                 .doOnNext(new Action1<String>() {
@@ -119,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 .doOnRequest(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        Log.e(TAG, "call: doOnRequest");
+                        Log.e(TAG, "call: doOnRequest:" + aLong);
                     }
                 })
                 .doOnTerminate(new Action0() {
@@ -148,6 +143,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onNext(String s) {
                         Log.e(TAG, "subscribe->call: onNext:" + s);
+                    }
+
+                    @Override
+                    public void onStart() {
+                        super.onStart();
                     }
                 });
     }
@@ -458,14 +458,12 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * distinct的使用
+     */
     private void method1() {
         Observable.just("S", "M", "s", "A", "I", "L")
-                .distinct(new Func1<String, Object>() {
-                    @Override
-                    public Object call(String s) {
-                        return s;
-                    }
-                })
+                .distinct()
                 .subscribe(new Subscriber<String>() {
                     @Override
                     public void onCompleted() {
@@ -484,6 +482,9 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * buffer distinct使用
+     */
     private void method11() {
         Observable.just("A", "A", "B", "C", "C", "D", "E")
 //                .map(new Func1<Student, Object>() {
