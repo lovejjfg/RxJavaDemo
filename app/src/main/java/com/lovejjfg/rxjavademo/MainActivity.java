@@ -1,11 +1,15 @@
 package com.lovejjfg.rxjavademo;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.CheckBox;
@@ -13,6 +17,7 @@ import android.widget.CheckBox;
 import com.f2prateek.rx.preferences.RxSharedPreferences;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxCompoundButton;
+import com.tbruyelle.rxpermissions.RxPermissions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +47,20 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext());
         rxPreferences = RxSharedPreferences.create(preferences);
         initStudents();
+        RxPermissions.getInstance(this)
+                .request(Manifest.permission.READ_PHONE_STATE)
+                .subscribe(new Action1<Boolean>() {
+                    @Override
+                    public void call(Boolean aBoolean) {
+                        Log.e(TAG, "call: " + aBoolean);
+                        if (aBoolean) {
+                            loadPhoneStatus();
+                        } else {
+                            Log.e(TAG, "call: 权限拒绝！！");
+                        }
+
+                    }
+                });
 
         //noinspection ConstantConditions
         Subscription clickSubscribe = RxView.clicks(findViewById(R.id.bt))
@@ -56,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void call(Void aVoid) {
                         methodCallBack();
+
 //                        method1();
 //                        method2();
 //                        method3();
@@ -529,5 +549,15 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         super.onDestroy();
+    }
+
+    private void loadPhoneStatus()
+    {
+        TelephonyManager phoneMgr=(TelephonyManager)this.getSystemService(Context.TELEPHONY_SERVICE);
+        Log.e(TAG, "手机型号:"+ Build.MODEL); //手机型号
+        Log.e(TAG, "deviceId:"+phoneMgr.getDeviceId() ); //手机型号
+        Log.e(TAG, "手机号:"+ phoneMgr.getLine1Number()); //手机型号
+        Log.e(TAG, "版本号:"+ Build.VERSION.RELEASE); //
+
     }
 }
